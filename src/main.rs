@@ -2,6 +2,8 @@ use std::fs;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpListener, TcpStream};
 
+use hello_server::ThreadPool;
+
 const HOST: &str = "127.0.0.1";
 const PORT: &str = "8000";
 
@@ -10,9 +12,13 @@ fn main() {
     let listener = TcpListener::bind(url).unwrap();
     println!("listening on port {PORT}...");
 
+    let pool = ThreadPool::new(4);
+
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream);
+        pool.execute(|| {
+            handle_connection(stream);
+        });
     }
 }
 
@@ -22,6 +28,10 @@ fn handle_connection(mut stream: TcpStream) {
 
     let (response_status_line, filename) = match request_status_line.as_str() {
         "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "index.html"),
+        "GET /sleep HTTP/1.1" => {
+            std::thread::sleep(std::time::Duration::from_secs(5));
+            ("HTTP/1.1 200 OK", "index.html")
+        }
         _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
     };
 
