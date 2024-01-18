@@ -15,14 +15,13 @@ fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
     let request_status_line = buf_reader.lines().next().unwrap().unwrap();
 
-    let mut response_status_line = "HTTP/1.1 200 OK";
-    let contents = if request_status_line == "GET / HTTP/1.1" {
-        fs::read_to_string("index.html").unwrap()
+    let (filename, response_status_line) = if request_status_line == "GET / HTTP/1.1" {
+        ("index.html", "HTTP/1.1 200 OK")
     } else {
-        response_status_line = "HTTP/1.1 404 Not Found";
-        fs::read_to_string("404.html").unwrap()
+        ("404.html", "HTTP/1.1 404 NOT FOUND")
     };
 
+    let contents = fs::read_to_string(filename).unwrap();
     let response = format!(
         "{}\r\nContent-Length: {}\r\n\r\n{}",
         response_status_line,
