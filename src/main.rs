@@ -13,17 +13,21 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
-    let http_request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
-    println!("Request: {:#?}", http_request);
+    let request_status_line = buf_reader.lines().next().unwrap().unwrap();
 
-    let status_line = "HTTP/1.1 200 OK";
-    let contents = fs::read_to_string("index.html").unwrap();
-    let length = contents.len();
+    let mut response_status_line = "HTTP/1.1 200 OK";
+    let contents = if request_status_line == "GET / HTTP/1.1" {
+        fs::read_to_string("index.html").unwrap()
+    } else {
+        response_status_line = "HTTP/1.1 404 Not Found";
+        fs::read_to_string("404.html").unwrap()
+    };
 
-    let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+    let response = format!(
+        "{}\r\nContent-Length: {}\r\n\r\n{}",
+        response_status_line,
+        contents.len(),
+        contents
+    );
     stream.write_all(response.as_bytes()).unwrap();
 }
