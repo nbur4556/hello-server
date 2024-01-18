@@ -2,8 +2,13 @@ use std::fs;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpListener, TcpStream};
 
+const HOST: &str = "127.0.0.1";
+const PORT: &str = "8000";
+
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:5000").unwrap();
+    let url = format!("{HOST}:{PORT}");
+    let listener = TcpListener::bind(url).unwrap();
+    println!("listening on port {PORT}...");
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
@@ -15,10 +20,9 @@ fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
     let request_status_line = buf_reader.lines().next().unwrap().unwrap();
 
-    let (filename, response_status_line) = if request_status_line == "GET / HTTP/1.1" {
-        ("index.html", "HTTP/1.1 200 OK")
-    } else {
-        ("404.html", "HTTP/1.1 404 NOT FOUND")
+    let (response_status_line, filename) = match request_status_line.as_str() {
+        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "index.html"),
+        _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
     };
 
     let contents = fs::read_to_string(filename).unwrap();
