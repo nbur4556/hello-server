@@ -1,5 +1,4 @@
 use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
 
 mod worker;
 use worker::Worker;
@@ -39,5 +38,16 @@ impl ThreadPool {
     {
         let job = Box::new(f);
         self.sender.send(job).unwrap();
+    }
+}
+
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        for worker in &mut self.workers {
+            println!("Shutting down worker {}", worker.id);
+            if let Some(thread) = worker.worker_thread.take() {
+                thread.join().unwrap();
+            }
+        }
     }
 }
