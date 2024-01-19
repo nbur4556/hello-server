@@ -17,12 +17,12 @@ fn main() {
     for stream in listener.incoming() {
         let stream = stream.unwrap();
         pool.execute(|| {
-            handle_connection(&stream);
+            handle_connection(stream);
         });
     }
 }
 
-fn handle_connection(mut stream: &TcpStream) {
+fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
     let request_status_line = buf_reader.lines().next().unwrap().unwrap();
 
